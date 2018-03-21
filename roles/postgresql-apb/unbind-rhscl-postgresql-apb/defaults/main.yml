@@ -1,0 +1,5 @@
+---
+
+pip_url: "https://bootstrap.pypa.io/get-pip.py"
+local_path: "/opt/apb/.local/bin"
+state: absent

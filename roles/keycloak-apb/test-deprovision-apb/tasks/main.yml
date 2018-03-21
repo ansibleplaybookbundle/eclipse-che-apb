@@ -1,0 +1,15 @@
+---
+- name: "Check that all resources have been removed"
+  shell: oc get secret,svc,pvc,route,dc,pod,is -l app={{ application_name }} 2>&1
+  register: result
+  retries: 50
+  delay: 10
+  until: '"No resources found." in result.stdout'
+
+- name: "Test deprovision"
+  asb_save_test_result:
+    fail: true
+    msg: "There seem to be some resources that has not been deleted."
+  when:
+    - '"No resources found." not in result.stdout'
+    - travis is undefined

@@ -1,0 +1,52 @@
+---
+
+# Che Configuration
+application_name: "che"
+che_image_name: "eclipse/che-server"
+che_image_tag: "nightly"
+
+che_infrastructure_active: "openshift"
+che_debug_server: "false"
+che_port: "8080"
+che_local_conf_dir: "/etc/conf"
+che_logs_dir: "/data/logs"
+che_log_level: "INFO"
+che_multiuser: "true"
+che_predefined_stacks_reload__on__start: "true"
+che_workspace_auto_start: "false"
+
+# PostgreSQL Che Configuration
+che_jdbc_db_host: "postgres"
+che_jdbc_db_port: 5432
+che_jdbc_db_name: "dbche"
+che_jdbc_username: "pgche"
+che_jdbc_password: "pgchepassword"
+che_jdbc_url: "jdbc:postgresql://{{ che_jdbc_db_host }}:{{ che_jdbc_db_port }}/{{ che_jdbc_db_name }}"
+
+# Keycloak Che Configuration
+che_keycloak_client__id: "che-public"
+che_keycloak_realm: "che"
+che_keycloak_github_endpoint: ""
+che_keycloak_oso_endpoint: ""
+
+# Kubernetes PVC
+che_infra_kubernetes_pvc_precreate__subpaths: "true"
+che_infra_kubernetes_pvc_quantity: "1Gi"
+che_infra_kubernetes_pvc_strategy: "unique"
+che_infra_kubernetes_pvc_name: ""
+
+# Kubernetes / OpenShift Config
+che_infra_kubernetes_machine__start__timeout__min: "5"
+che_infra_kubernetes_master__url: ""
+che_infra_kubernetes_oauth__token: ""
+che_infra_kubernetes_password: ""
+che_infra_kubernetes_trust__certs: "false"
+che_infra_kubernetes_username: ""
+che_infra_openshift_tls__enabled: "false"
+
+che_infra_openshift_project: "{{ namespace }}"
+che_infra_openshift: "{{ namespace }}"
+
+# Github
+che_oauth_github_clientid: ""
+che_oauth_github_clientsecret: ""

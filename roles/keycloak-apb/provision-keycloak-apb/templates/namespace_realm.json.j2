@@ -1,0 +1,17 @@
+{
+  "id": "{{ namespace }}",
+  "realm": "{{ namespace }}",
+  "enabled": true,
+  "eventsEnabled": true,
+  "eventsExpiration": 7200,
+  "displayName": "{{ project_name }}",
+  "eventsListeners": ["jboss-logging"],
+  "users": [
+    {{ keycloak_users | default('') }}
+  ],
+  "roles": {
+    "realm": [
+      {{ keycloak_roles | default('') }}
+    ]
+  }
+}

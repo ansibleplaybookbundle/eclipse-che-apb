@@ -1,0 +1,28 @@
+---
+- name: "[SET UP] tmp folder"
+  file:
+    path: /tmp/keycloak
+    state: directory
+
+- name: "[POSTGRES] Deploy"
+  include_tasks: deploy-postgres.yml
+  when: _apb_plan_id == 'persistent'
+
+- name: "[KEYCLOAK] Deploy"
+  include_tasks: deploy-keycloak.yml
+  when: _apb_plan_id != 'external'
+
+- name: "[KEYCLOAK] Set Keycloak URI when not defined"
+  include_role:
+    name: set-keycloak-uri
+  when: (not apb_keycloak_uri is defined) OR (apb_keycloak_uri == "")
+
+- name: "[KEYCLOAK] Set Keycloak URI from user defined variable"
+  set_fact:
+    keycloak_uri: "{{ apb_keycloak_uri }}"
+  when:
+    - apb_keycloak_uri is defined
+    - apb_keycloak_uri != ""
+
+- name: "[KEYCLOAK] Provision"
+  include_tasks: provision-keycloak.yml

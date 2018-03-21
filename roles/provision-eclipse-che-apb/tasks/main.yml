@@ -1,0 +1,5 @@
+---
+- include_tasks: postgres.yml
+- include_tasks: keycloak.yml
+- include_tasks: che.yml
+- include_tasks: realm.yml

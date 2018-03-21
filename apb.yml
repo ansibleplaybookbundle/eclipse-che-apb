@@ -1,0 +1,111 @@
+version: 1.0
+name: eclipse-che-apb
+description: Eclipse Che
+bindable: false
+async: optional
+metadata:
+  providerDisplayName: "Red Hat, Inc."
+  documentationUrl: "https://www.eclipse.org/che/docs/6/che/docs/"
+  imageUrl: >-
+    https://github.com/eclipse/che-docs/raw/master/src/main/images/che_logo.png
+  longDescription: "An APB that deploys Eclipse Che v6.x with persistent storage. Required - Persistent Volumes, ASB configured with sandbox_role admin. Unsupported - TLS, Ephemeral storage. All the parameters are defaulted with typical configured values."
+  displayName: "Eclipse Che (APB)"
+  dependencies:
+    - "docker.io/eclipse/che-server:nightly"
+    - "docker.io/jboss/keycloak-openshift:3.4.3.Final"
+    - "docker.io/rhscl/postgresql-96-rhel7:latest"
+plans:
+  - name: prod
+    description: Persistent deployment of Eclipse Che
+    free: true
+    metadata:
+      displayName: Production
+      longDescription: "This plan deploys Eclipse Che with persistent storage. All the parameters are defaulted with typical configured values."
+    parameters:
+      - name: "che_predefined_stacks_reload__on__start"
+        title: "Stack reload on start"
+        type: boolean
+        default: true
+        required: false
+        display_group: Che Configuration
+      - name: "che_workspace_auto_start"
+        title: "Workspace auto start"
+        type: boolean
+        default: false
+        required: false
+        display_group: Che Configuration
+      - name: "che_jdbc_db_host"
+        title: Database host
+        type: string
+        required: false
+        default: "postgres"
+        display_group: PostgreSQL Database Configuration
+      - name: "che_jdbc_db_port"
+        title: Database port
+        type: string
+        required: false
+        default: "5432"
+        display_group: PostgreSQL Database Configuration
+      - name: "che_jdbc_db_name"
+        title: Database name
+        type: string
+        required: false
+        default: "dbche"
+        display_group: PostgreSQL Database Configuration
+      - name: "che_jdbc_db_username"
+        title: Database username
+        type: string
+        required: false
+        default: "pgche"
+        display_group: PostgreSQL Database Configuration
+      - name: "che_jdbc_db_password"
+        title: Database password (set to default pgchepassword)
+        type: string
+        required: false
+        default: "pgchepassword"
+        display_type: password
+        display_group: PostgreSQL Database Configuration
+      - name: "che_data_pvc_quantity"
+        title: "Che server data volume size"
+        type: string
+        required: false
+        default: "1Gi"
+        display_group: Persistent Volume
+      - name: "che_infra_kubernetes_pvc_precreate__subpaths"
+        title: Precreate Subpaths
+        type: boolean
+        required: false
+        default: true
+        display_group: Persistent Volume
+      - name: "che_infra_kubernetes_pvc_quantity"
+        title: Disk quantity for che workspace
+        type: string
+        required: false
+        default: "1Gi"
+        display_group: Persistent Volume
+      - name: "che_infra_kubernetes_pvc_strategy"
+        title: Common or unique volume for workspace
+        type: enum
+        enum: ['unique', 'common']
+        required: false
+        default: "unique"
+        display_group: Persistent Volume
+      - name: "che_infra_kubernetes_pvc_name"
+        title: Workspace Volume Name (only if strategy is common)
+        type: string
+        required: false
+        default: ""
+        display_group: Persistent Volume
+      - name: "che_debug_server"
+        title: Enable Che Debugging
+        type: boolean
+        required: false
+        default: false
+        display_group: Debug
+      - name: "che_log_level"
+        title: "Che Log Level"
+        type: string
+        required: false
+        default: "INFO"
+        display_group: Debug
+

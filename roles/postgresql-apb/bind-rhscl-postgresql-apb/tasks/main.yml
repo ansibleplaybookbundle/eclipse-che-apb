@@ -1,0 +1,94 @@
+---
+# Make sure we have facts in case the playbook that calls this role
+# does not.  Need environment variable PATH
+
+- name: Gather Facts
+  setup:
+
+# Download, install pip, and use pip to install the
+# psycopg2-binary package so that we can use the
+# postgresql_* ansible modules.
+
+- name: Download Package
+  get_url:
+    url: "{{ pip_url }}"
+    dest: /tmp/pip.sh
+    mode: 0755
+  register: download
+
+- name: Install Python pip for apb user
+  command: "{{ download['dest'] }} --user"
+
+- name: Install psycopg2-binary
+  pip:
+    name: "psycopg2-binary"
+    extra_args: "--user"
+  environment:
+    PATH: "{{ ansible_env['PATH'] }}:{{ local_path }}"
+
+#############################################################################
+# Create a new database for each binding. In many cases we may not want to
+# create the database for deletion later only the user and privileges, in that
+# case the database should be created during provision and not in the bind.
+#############################################################################
+- name: create database
+  postgresql_db:
+    name: "{{ postgresql_db_name }}"
+    port: "{{ _apb_provision_creds.DB_PORT }}"
+    login_host: "{{ _apb_provision_creds.DB_HOST }}.{{ namespace }}"
+    login_user: "{{ _apb_provision_creds.DB_ADMIN_USER }}"
+    login_password: "{{ _apb_provision_creds.DB_ADMIN_PASSWORD }}"
+    state: "{{ state }}"
+  when: state == "present"
+
+
+#############################################################################
+# Create a user for the new database
+#############################################################################
+- name: create database user
+  postgresql_user:
+    db: "{{ postgresql_db_name }}"
+    name: "{{ postgresql_user }}"
+    password: "{{ postgresql_password }}"
+    port: "{{ _apb_provision_creds.DB_PORT }}"
+    role_attr_flags: "{% if postgresql_superuser %}SUPERUSER{% endif %}"
+    login_host: "{{ _apb_provision_creds.DB_HOST }}.{{ namespace }}"
+    login_user: "{{ _apb_provision_creds.DB_ADMIN_USER }}"
+    login_password: "{{ _apb_provision_creds.DB_ADMIN_PASSWORD }}"
+    encrypted: yes
+    state: "{{ state }}"
+
+
+#############################################################################
+# Give the user privileges to the created database
+#############################################################################
+- name: grant privileges on database
+  postgresql_privs:
+    db: "{{ postgresql_db_name }}"
+    port: "{{ _apb_provision_creds.DB_PORT }}"
+    role: "{{ postgresql_user }}"
+    login_host: "{{ _apb_provision_creds.DB_HOST }}.{{ namespace }}"
+    login_user: "{{ _apb_provision_creds.DB_ADMIN_USER }}"
+    login_password: "{{ _apb_provision_creds.DB_ADMIN_PASSWORD }}"
+    type: database
+    privs: ALL
+    state: "{{ state }}"
+
+
+#############################################################################
+# Encode these credentials for the secret which will be added to applications
+# DB_HOST will not need to be namespace qualified here since applications
+# will live in the same namespace
+#############################################################################
+- name: encode bind credentials
+  asb_encode_binding:
+    fields:
+      DB_TYPE: postgres
+      DB_HOST: "{{ _apb_provision_creds.DB_HOST }}"
+      DB_PORT: "{{ _apb_provision_creds.DB_PORT }}"
+      DB_NAME: "{{ postgresql_db_name }}"
+      DB_USER: "{{ postgresql_user }}"
+      DB_PASSWORD: "{{ postgresql_password }}"
+  when:
+    - state == "present"
+    - encode

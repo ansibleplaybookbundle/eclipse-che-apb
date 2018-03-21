@@ -1,0 +1,8 @@
+---
+apiVersion: servicecatalog.k8s.io/v1beta1
+kind: ServiceInstance
+metadata:
+  name: eclipse-che
+spec:
+  clusterServiceClassExternalName: localregistry-eclipse-che-apb
+  clusterServicePlanExternalName: prod

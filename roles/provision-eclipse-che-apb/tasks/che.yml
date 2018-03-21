@@ -1,0 +1,114 @@
+---
+# Modifications from https://github.com/ruromero/eclipse-che-apb/
+
+
+- name: Create ServiceAccount
+  k8s_v1_service_account:
+    name: "che"
+    namespace: "{{ namespace }}"
+    state: present
+
+- name: Create RoleBinding
+  k8s_v1beta1_role_binding:
+    name: "che-admin"
+    namespace: "{{ namespace }}"
+    state: present
+    role_ref_name: admin
+    role_ref_kind: ClusterRole
+    subjects:
+    - kind: ServiceAccount
+      name: "che"
+      namespace: "{{ namespace }}"
+
+- name: Create Service
+  k8s_v1_service:
+    name: "che-host"
+    namespace: "{{ namespace }}"
+    state: present
+    selector:
+      app: "{{ application_name }}"
+    ports:
+      - name: http
+        port: 8080
+        target_port: 8080
+      - name: debug
+        port: 8000
+        target_port: 8000
+    labels:
+      app: "{{ application_name }}"
+
+- name: Create Route
+  openshift_v1_route:
+    name: "{{ application_name }}"
+    namespace: "{{ namespace }}"
+    labels:
+      app: "{{ application_name }}"
+    state: present
+    spec_to_kind: Service
+    spec_to_name: "che-host"
+    spec_port_target_port: http
+  register: route
+
+- set_fact:
+    route_host: "{{ route.route.spec.host }}"
+
+- name: Create Data PersistentVolumeClaim
+  k8s_v1_persistent_volume_claim:
+    name: "{{ application_name }}-data-claim"
+    namespace: "{{ namespace}}"
+    labels:
+      app: "{{ application_name }}"
+    state: present
+    access_modes:
+    - ReadWriteOnce
+    resources_requests:
+      storage: "{{ che_data_pvc_quantity }}"
+  when:
+    - che_data_pvc_quantity is defined
+    - che_data_pvc_quantity != ""
+
+- name: Create Workspace PersistentVolumeClaim
+  k8s_v1_persistent_volume_claim:
+    name: "{{ application_name }}-workspace-claim"
+    namespace: "{{ namespace }}"
+    labels:
+      app: "{{ application_name }}"
+    state: present
+    access_modes:
+    - ReadWriteOnce
+    resources_requests:
+      storage: "{{ che_infra_kubernetes_pvc_quantity }}"
+  when:
+    - che_infra_kubernetes_pvc_strategy is defined
+    - che_infra_kubernetes_pvc_strategy == "common"
+
+- name: Process ConfigMap Object from template
+  template:
+    src: configmap.yaml.j2
+    dest: "/tmp/configmap.yaml"
+  register: cmobj
+
+- set_fact:
+    cmobj_path: "{{ cmobj.dest | default(cmobj.path) }}"
+
+# The k8s_v1_config_map module _does_ _not_ _work_
+# If a value is an empty string it will remove the key-value.
+- name: Create ConfigMap
+  command: "oc -n {{ namespace }} create -f {{ cmobj_path }}"
+
+# https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#configure-all-key-value-pairs-in-a-configmap-as-pod-environment-variables
+- name: Process DeploymentConfig from template
+  template:
+    src: deploymentconfig.yaml.j2
+    dest: "/tmp/deploymentconfig.yaml"
+  register: dc
+
+- set_fact:
+     dc_path: "{{ dc.dest | default(dc.path) }}"
+
+- name: Create DeploymentConfig
+  openshift_v1_deployment_config:
+    name: "{{ application_name }}"
+    namespace: "{{ namespace}}"
+    state: present
+    src: "{{ dc.dest | default(dc.path) }}"

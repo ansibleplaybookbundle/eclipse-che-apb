@@ -1,0 +1,42 @@
+---
+- name: Delete route
+  openshift_v1_route:
+    name: '{{ application_name }}'
+    namespace: '{{ namespace }}'
+    state: absent
+
+- name: Delete services
+  k8s_v1_service:
+    name: '{{ item }}'
+    namespace: '{{ namespace }}'
+    state: absent
+  with_items:
+  - '{{ application_name }}'
+  - '{{ postgres_name }}'
+
+- name: Delete deployment configs
+  openshift_v1_deployment_config:
+    name: '{{ item }}'
+    namespace: '{{ namespace }}'
+    state: absent
+  with_items:
+  - '{{ application_name }}'
+  - '{{ postgres_name }}'
+
+- name: Delete secrets
+  k8s_v1_secret:
+    name: '{{ postgres_name }}'
+    namespace: '{{ namespace }}'
+    state: absent
+
+- name: Delete persistent volume claims
+  k8s_v1_persistent_volume_claim:
+    name: '{{ postgres_name }}'
+    namespace: '{{ namespace }}'
+    state: absent
+
+- name: Delete ImageStream
+  openshift_v1_image_stream:
+    name: "{{ application_name }}"
+    namespace: "{{ namespace }}"
+    state: absent
