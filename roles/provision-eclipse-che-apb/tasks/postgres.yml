@@ -1,0 +1,80 @@
+---
+- name: Generate PostgreSQL Admin Password
+  set_fact:
+    postgresql_admin_password: "{{ lookup('password','/tmp/postgres_admin chars=ascii_letters,digits length=13') }}"
+    postgresql_keycloak_password: "{{ lookup('password','/tmp/keycloak_dbpass chars=ascii_letters,digits length=13') }}"
+    postgresql_che_password: "{{ lookup('password','/tmp/dbche chars=ascii_letters,digits length=13') }}"
+
+- name: Create _apb_provision_creds for PostgreSQL
+  set_fact:
+    _apb_provision_creds:
+      DB_PORT: "5432"
+      DB_TYPE: postgres
+      DB_HOST: postgresql
+      DB_ADMIN_USER: postgres
+      DB_ADMIN_PASSWORD: "{{ postgresql_admin_password }}"
+
+- include_role:
+    name: postgresql-apb/rhscl-postgresql-apb
+
+- include_role:
+    name: postgresql-apb/bind-rhscl-postgresql-apb
+  vars:
+    postgresql_db_name: "keycloak"
+    postgresql_user: "keycloak"
+    postgresql_password: "{{ postgresql_keycloak_password }}"
+    postgresql_superuser: false
+    encode: False
+
+- include_role:
+    name: postgresql-apb/bind-rhscl-postgresql-apb
+  vars:
+    postgresql_db_name: "{{ che_jdbc_db_name }}"
+    postgresql_user: "{{ che_jdbc_username }}"
+    postgresql_password: "{{ che_jdbc_password }}"
+    postgresql_superuser: true
+    encode: False
+
+- name: PostgreSQL
+  k8s_v1_secret:
+    name: 'database-passwords'
+    namespace: '{{ namespace }}'
+    string_data:
+      postgresql_admin_password: "{{ postgresql_admin_password }}"
+      postgresql_keycloak_password: "{{ postgresql_keycloak_password }}"
+      postgresql_che_password: "{{ postgresql_che_password }}"
+
+- name: Create Postgres secret
+  k8s_v1_secret:
+    name: 'postgres'
+    namespace: '{{ namespace }}'
+    labels:
+      app: rhscl-postgresql-apb
+    annotations:
+      template.openshift.io/expose-username: "{.data['database-user']}"
+      template.openshift.io/expose-password: "{.data['database-password']}"
+      template.openshift.io/expose-database_name: "{.data['database-name']}"
+    string_data:
+      database-user: "keycloak"
+      database-password: "{{ postgresql_keycloak_password }}"
+      database-name: "keycloak"
+
+- name: Create Postgres service
+  k8s_v1_service:
+    name: 'postgres'
+    namespace: '{{ namespace }}'
+    labels:
+      app: rhscl-postgresql-apb
+    annotations:
+      template.openshift.io/expose-uri: postgres://{.spec.clusterIP}:{.spec.ports[?(.name=="postgresql")].port}
+    ports:
+    - name: postgresql
+      protocol: TCP
+      port: 5432
+      target_port: 5432
+      node_port: 0
+    selector:
+      app: rhscl-postgresql-apb
+      service: postgresql-9.6-prod
+    spec_type: ClusterIP
+    session_affinity: None

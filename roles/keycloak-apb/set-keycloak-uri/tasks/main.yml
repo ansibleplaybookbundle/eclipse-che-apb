@@ -1,0 +1,64 @@
+---
+- name: Get DeploymentConfig
+  openshift_v1_deployment_config:
+    name: "{{ application_name }}"
+    namespace: "{{ namespace}}"
+  register: keycloak_dc_raw
+  retries: 20
+  delay: 20
+  until: keycloak_dc_raw.deployment_config.status.available_replicas == 1
+
+- name: Get keycloak https route
+  openshift_v1_route:
+    name: '{{ application_name }}'
+    namespace: '{{ namespace }}'
+  register: keycloak_route_raw
+
+- name: Set keycloak uri from route
+  set_fact:
+    keycloak_uri: 'https://{{ keycloak_route_raw.route.spec.host }}'
+
+- name: Test URL
+  uri:
+    url: "{{ keycloak_uri }}/auth/"
+    return_content: yes
+    validate_certs: no
+  register: webpage
+  ignore_errors: true
+  retries: 5
+  delay: 5
+  until:
+    - webpage.status == 200
+    - '"Welcome to" in webpage.content'
+
+- block:
+  - name: Get keycloak service
+    k8s_v1_service:
+      name: '{{ application_name }}'
+      namespace: '{{ namespace }}'
+    register: keycloak_service_raw
+
+  - name: Set keycloak uri from service
+    set_fact:
+      keycloak_uri: 'http://{{ keycloak_service_raw.service.spec.cluster_ip }}:{{ keycloak_service_raw.service.spec.ports[0].port }}'
+
+  - name: Test URL
+    uri:
+      url: "{{ keycloak_uri }}/auth/"
+      return_content: yes
+      validate_certs: no
+    register: webpage_svc
+    ignore_errors: true
+    retries: 5
+    delay: 5
+    until:
+      - webpage_svc.status == 200
+      - '"Welcome to" in webpage_svc.content'
+
+  - name: Check if keycloak_uri has been set and verified
+    fail:
+      msg: Unable to retrieve a valid keycloak_uri
+    when: (webpage_svc.status != 200) or
+          (not "Welcome to" in webpage_svc.content)
+  when: (webpage.status != 200) or
+        (not "Welcome to" in webpage.content)

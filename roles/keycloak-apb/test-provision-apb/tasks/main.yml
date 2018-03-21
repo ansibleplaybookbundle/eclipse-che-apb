@@ -1,0 +1,82 @@
+---
+- name: Retrieve Postgres DeploymentConfig
+  openshift_v1_deployment_config:
+    name: '{{ postgres_name }}'
+    namespace: '{{ namespace }}'
+  register: postgres_dc
+  retries: 5
+  delay: 10
+  when: _apb_plan_id == 'persistent'
+
+- name: Check Postgres is ready
+  asb_save_test_result:
+    fail: true
+    msg: "Postgres doesn't seem to be ready"
+  when:
+    - _apb_plan_id == 'persistent'
+    - postgres_dc.deployment_config.status.available_replicas == 0
+    - travis is undefined
+
+- name: "Retrieve Service to keycloak"
+  k8s_v1_service:
+    name: '{{ application_name }}'
+    namespace: '{{ namespace }}'
+  register: keycloak_service_raw
+
+- name: Fetch Keycloak endpoint from service
+  set_fact:
+    test_keycloak_uri: 'http://{{ keycloak_service_raw.service.spec.cluster_ip }}:{{ keycloak_service_raw.service.spec.ports[0].port}}'
+
+- name: Check that the keycloak webpage is accessible
+  uri:
+    url: "{{ test_keycloak_uri }}/auth/"
+    return_content: yes
+    validate_certs: no
+  register: webpage
+  retries: 10
+  delay: 20
+  until:
+    - '"Welcome to Keycloak" in webpage.content'
+    - webpage.status == 200
+
+- name: "Check Keycloak is ready"
+  asb_save_test_result:
+    fail: true
+    msg: "Keycloak doesn't seem to be ready"
+  when:
+    - webpage.status != 200
+    - '"Welcome to Keycloak" not in webpage.content'
+    - travis is undefined
+
+- name: Generate keycloak auth token
+  uri:
+    url: "{{ test_keycloak_uri }}/auth/realms/master/protocol/openid-connect/token"
+    method: POST
+    body: "client_id=admin-cli&username={{ admin_username }}&password={{ admin_password }}&grant_type=password"
+    validate_certs: no
+  register: keycloak_auth_response
+  until: keycloak_auth_response.status == 200
+  retries: 5
+  delay: 2
+
+- name: Set keycloak access token
+  set_fact:
+    auth_token: '{{ keycloak_auth_response.json.access_token }}'
+
+- name: "Check {{ namespace }} realm"
+  uri:
+    url: "{{ test_keycloak_uri }}/auth/admin/realms/{{ namespace }}"
+    method: GET
+    validate_certs: no
+    headers:
+      Authorization: "bearer {{ auth_token }}"
+    status_code: 200
+  register: realm_response
+
+- name: "Check Keycloak Realm {{ namespace }} has been provisioned"
+  asb_save_test_result:
+    fail: true
+    msg: "Keycloak realm {{ namespace }} doesn't exist"
+  when:
+    - realm_response.status != 200
+    - travis is undefined

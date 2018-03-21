@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: DeploymentConfig
+metadata:
+  labels:
+    app: {{ application_name }}
+  name: {{ application_name }}
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    app: {{ application_name }}
+  strategy:
+    recreateParams:
+      timeoutSeconds: 10000
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: {{ application_name }}
+    spec:
+      containers:
+      - name: {{ application_name }}
+        envFrom:
+        - configMapRef:
+            name: che
+        image: {{ che_image_name }}:{{ che_image_tag }}
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          httpGet:
+            path: /api/system/state
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 120
+          timeoutSeconds: 10
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 8000
+          name: http-debug
+        readinessProbe:
+          httpGet:
+            path: /api/system/state
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 15
+          timeoutSeconds: 60
+        volumeMounts:
+        - mountPath: /data
+          name: {{ application_name }}-data-volume
+      serviceAccountName: {{ application_name }}
+      volumes:
+      - name: {{ application_name }}-data-volume
+{% if che_data_pvc_quantity is defined %}
+        persistentVolumeClaim:
+          claimName: {{ application_name }}-data-claim
+{% else %}
+        emptyDir: {}
+{% endif %}
+  triggers:
+  - type: ConfigChange

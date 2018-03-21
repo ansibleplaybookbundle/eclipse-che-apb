@@ -1,0 +1,8 @@
+---
+- name: "[KEYCLOAK][DEPROVISION] Deployment"
+  include_tasks: deprovision-deployment.yml
+  when: _apb_plan_id != 'external'
+
+- name: "[KEYCLOAK][DEPROVISION] Realm"
+  include_tasks: deprovision-realm.yml
+  when: _apb_plan_id == 'external'
