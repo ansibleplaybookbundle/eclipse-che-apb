@@ -15,6 +15,9 @@ che_multiuser: "true"
 che_predefined_stacks_reload__on__start: "true"
 che_workspace_auto_start: "false"
 
+che_server_deployment_stragety: "Recreate"
+che_server_image_pull_policy: "IfNotPresent"
+
 # PostgreSQL Che Configuration
 che_jdbc_db_host: "postgres"
 che_jdbc_db_port: 5432

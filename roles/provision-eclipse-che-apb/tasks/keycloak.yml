@@ -9,16 +9,16 @@
     tasks_from: deploy-keycloak.yml
   vars:
     application_name: keycloak
-    admin_username: admin
-    admin_password: admin
+    admin_username:  "{{ che_keycloak_admin_username }}"
+    admin_password: "{{ che_keycloak_admin_password }}"
     postgres_name: "postgres"
 
 - include_role:
     name: keycloak-apb/set-keycloak-uri
   vars:
     application_name: keycloak
-    admin_username: admin
-    admin_password: admin
+    admin_username:  "{{ che_keycloak_admin_username }}"
+    admin_password: "{{ che_keycloak_admin_password }}"
 
 - name: delete keycloak https route
   openshift_v1_route:

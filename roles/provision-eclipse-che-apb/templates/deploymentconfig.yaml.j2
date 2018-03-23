@@ -10,9 +10,11 @@ spec:
   selector:
     app: {{ application_name }}
   strategy:
+    type: {{ che_server_deployment_stragety }}
+{% if che_server_deployment_stragety == 'Recreate' %}
     recreateParams:
       timeoutSeconds: 10000
-    type: Recreate
+{% endif %}
   template:
     metadata:
       labels:
@@ -24,7 +26,7 @@ spec:
         - configMapRef:
             name: che
         image: {{ che_image_name }}:{{ che_image_tag }}
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: "{{ che_server_image_pull_policy }}"
         livenessProbe:
           httpGet:
             path: /api/system/state

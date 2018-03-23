@@ -16,9 +16,9 @@
     role_ref_name: admin
     role_ref_kind: ClusterRole
     subjects:
-    - kind: ServiceAccount
-      name: "che"
-      namespace: "{{ namespace }}"
+      - kind: ServiceAccount
+        name: "che"
+        namespace: "{{ namespace }}"
 
 - name: Create Service
   k8s_v1_service:
@@ -60,7 +60,7 @@
       app: "{{ application_name }}"
     state: present
     access_modes:
-    - ReadWriteOnce
+      - ReadWriteOnce
     resources_requests:
       storage: "{{ che_data_pvc_quantity }}"
   when:
@@ -75,7 +75,7 @@
       app: "{{ application_name }}"
     state: present
     access_modes:
-    - ReadWriteOnce
+      - ReadWriteOnce
     resources_requests:
       storage: "{{ che_infra_kubernetes_pvc_quantity }}"
   when:
@@ -102,9 +102,6 @@
     src: deploymentconfig.yaml.j2
     dest: "/tmp/deploymentconfig.yaml"
   register: dc
-
-- set_fact:
-     dc_path: "{{ dc.dest | default(dc.path) }}"
 
 - name: Create DeploymentConfig
   openshift_v1_deployment_config:

@@ -8,7 +8,7 @@
   uri:
     url: "{{ keycloak_uri }}/auth/realms/master/protocol/openid-connect/token"
     method: POST
-    body: "client_id=admin-cli&username={{ keycloak_admin_username }}&password={{ keycloak_admin_password }}&grant_type=password"
+    body: "client_id=admin-cli&username={{ che_keycloak_admin_username }}&password={{ che_keycloak_admin_password }}&grant_type=password"
     validate_certs: no
   register: keycloak_auth_response
   until: keycloak_auth_response.status == 200

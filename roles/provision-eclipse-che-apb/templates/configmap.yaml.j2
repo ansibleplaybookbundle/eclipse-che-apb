@@ -15,11 +15,13 @@ data:
   CHE_INFRA_OPENSHIFT_PROJECT: "{{ che_infra_openshift_project }}"
   CHE_INFRA_OPENSHIFT: "{{ che_infra_openshift }}"
   CHE_INFRA_KUBERNETES_PVC_STRATEGY: "{{ che_infra_kubernetes_pvc_strategy }}"
-  CHE_INFRA_KUBERNETES_PVC_PRECREATE__SUBPATHS: "{{ che_infra_kubernetes_pvc_precreate__subpaths }}"
+  CHE_INFRA_KUBERNETES_PVC_PRECREATE__SUBPATHS: "{{ che_infra_kubernetes_pvc_precreate__subpaths  | bool | lower }}"
   CHE_INFRA_KUBERNETES_PVC_QUANTITY: "{{ che_infra_kubernetes_pvc_quantity }}"
+{% if che_infra_kubernetes_pvc_name != "" %}
   CHE_INFRA_KUBERNETES_PVC_NAME: "{{ che_infra_kubernetes_pvc_name }}"
+{% endif %}
   CHE_INFRA_OPENSHIFT_TLS__ENABLED: "{{ che_infra_openshift_tls__enabled }}"
-  CHE_INFRA_KUBERNETES_TRUST__CERTS: "{{ che_infra_kubernetes_trust__certs }}"
+  CHE_INFRA_KUBERNETES_TRUST__CERTS: "{{ che_infra_kubernetes_trust__certs  | bool | lower }}"
   CHE_INFRA_KUBERNETES_USERNAME: "{{ che_infra_kubernetes_username }}"
   CHE_JDBC_USERNAME: "{{ che_jdbc_username }}"
   CHE_JDBC_URL: "{{ che_jdbc_url }}"
@@ -32,11 +34,11 @@ data:
   CHE_LOCAL_CONF_DIR: "{{ che_local_conf_dir }}"
   CHE_LOGS_DIR: "{{ che_logs_dir }}"
   CHE_LOG_LEVEL: "{{ che_log_level }}"
-  CHE_MULTIUSER: "{{ che_multiuser }}"
+  CHE_MULTIUSER: "{{ che_multiuser | bool | lower }}"
   CHE_OAUTH_GITHUB_CLIENTID: "{{ che_oauth_github_clientid }}"
   CHE_OAUTH_GITHUB_CLIENTSECRET: "{{ che_oauth_github_clientsecret }}"
-  CHE_PREDEFINED_STACKS_RELOAD__ON__START: "{{ che_predefined_stacks_reload__on__start }}"
-  CHE_WORKSPACE_AUTO_START: "{{ che_workspace_auto_start }}"
+  CHE_PREDEFINED_STACKS_RELOAD__ON__START: "{{ che_predefined_stacks_reload__on__start | bool | lower }}"
+  CHE_WORKSPACE_AUTO_START: "{{ che_workspace_auto_start | bool | lower }}"
   JAVA_OPTS: "-XX:MaxRAMFraction=2 -XX:+UseParallelGC -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=20 -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -Dsun.zip.disableMemoryMapping=true -Xms20m "
 kind: ConfigMap
 metadata:

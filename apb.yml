@@ -1,3 +1,4 @@
+---
 version: 1.0
 name: eclipse-che-apb
 description: Eclipse Che
@@ -22,6 +23,27 @@ plans:
       displayName: Production
       longDescription: "This plan deploys Eclipse Che with persistent storage. All the parameters are defaulted with typical configured values."
     parameters:
+      - name: "che_image_tag"
+        title: Che Server Image Tag
+        type: enum
+        enum: ["nightly-centos", "nightly", "latest-centos", "latest"]
+        required: false
+        default: "nightly"
+        display_group: Che Configuration
+      - name: "che_server_deployment_stragety"
+        title: Che Deployment Stragety
+        type: enum
+        enum: ["Recreate", "Rolling"]
+        required: false
+        default: "Recreate"
+        display_group: Che Configuration
+      - name: "che_server_image_pull_policy"
+        title: "Che DeploymentConfig Image pull policy"
+        type: enum
+        enum: ["Always", "IfNotPresent", "Never"]
+        required: false
+        default: "IfNotPresent"
+        display_group: Che Configuration
       - name: "che_predefined_stacks_reload__on__start"
         title: "Stack reload on start"
         type: boolean
@@ -34,6 +56,31 @@ plans:
         default: false
         required: false
         display_group: Che Configuration
+      - name: "che_keycloak_admin_username"
+        title: Keycloak Admin Username
+        type: string
+        required: false
+        default: "admin"
+        display_group: Keycloak Configuration
+      - name: "che_keycloak_admin_password"
+        title: Keycloak Admin Password
+        type: string
+        required: false
+        default: "admin"
+        display_type: password
+        display_group: Keycloak Configuration
+      - name: "che_keycloak_realm"
+        title: Che Keycloak Realm
+        type: string
+        default: "che"
+        required: false
+        display_group: Keycloak Configuration
+      - name: "che_keycloak_client__id"
+        title: "Che Keycloak Client Id"
+        type: string
+        default: "che-public"
+        required: false
+        display_group: Keycloak Configuration
       - name: "che_jdbc_db_host"
         title: Database host
         type: string

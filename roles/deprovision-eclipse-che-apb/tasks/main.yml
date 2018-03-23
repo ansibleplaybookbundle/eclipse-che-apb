@@ -1,0 +1,7 @@
+---
+
+- name: Remove everything
+  command: "oc delete all --all -n {{ namespace }}"
+
+
+

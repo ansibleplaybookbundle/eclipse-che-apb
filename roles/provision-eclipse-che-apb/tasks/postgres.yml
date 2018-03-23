@@ -68,11 +68,11 @@
     annotations:
       template.openshift.io/expose-uri: postgres://{.spec.clusterIP}:{.spec.ports[?(.name=="postgresql")].port}
     ports:
-    - name: postgresql
-      protocol: TCP
-      port: 5432
-      target_port: 5432
-      node_port: 0
+      - name: postgresql
+        protocol: TCP
+        port: 5432
+        target_port: 5432
+        node_port: 0
     selector:
       app: rhscl-postgresql-apb
       service: postgresql-9.6-prod
