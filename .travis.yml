@@ -1,0 +1,55 @@
+---
+sudo: required
+sevices:
+  - docker
+
+language: python
+python:
+  - '2.7'
+
+stages:
+  - lint
+  - test
+
+env:
+  - ANSIBLE_ROLES_PATH=$ANSIBLE_ROLES_PATH:$PWD/roles OPENSHIFT_VERSION=v3.9
+
+install:
+  - sudo apt-get update -qq
+  - sudo apt-get install git jq
+
+jobs:
+  include:
+  - stage: lint
+    python: '2.7'
+    script:
+      - pip install --pre ansible apb yamllint
+      - ansible-galaxy install ansible.kubernetes-modules
+      - git clone https://github.com/ansibleplaybookbundle/ansible-asb-modules.git $PWD/roles/ansibleplaybookbundle.asb-modules
+      # Verify all playbooks have valid syntax
+      - |
+        for PLAYBOOK in playbooks/{provision,deprovision,test}.yml
+        do ansible-playbook $PLAYBOOK --syntax-check
+        done
+      # Verify apb.yml file is valid YAML
+      - yamllint apb.yml
+
+  - stage: test
+    script:
+      - export IPADDR=$(sudo ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
+      - sudo sed -i "s/\DOCKER_OPTS=\"/DOCKER_OPTS=\"--insecure-registry=172.30.0.0\/16 /g" /etc/default/docker
+      - sudo cat /etc/default/docker
+      - sudo service docker restart
+      - export APB_NAME=eclipse-che-apb
+      - docker build -t $APB_NAME .
+      - export B64_SPEC=`base64 apb.yml | tr -d '\n'`
+      - export APB_LABEL=`docker inspect --format='{{json .Config.Labels}}' $(docker images -q | head -n 1) | jq '."com.redhat.apb.spec"' | cut -d'"' -f2 | tr -d '\n'`
+      - if [ "$B64_SPEC" != "$APB_LABEL" ]; then { echo "APB Spec Label doesn't match, run - apb prepare"; exit -1; }; fi;
+      - sudo docker cp $(docker create docker.io/openshift/origin:$OPENSHIFT_VERSION):/bin/oc /usr/local/bin/oc
+      - oc cluster up --version=$OPENSHIFT_VERSION --routing-suffix "${IPADDR}.nip.io"
+      - oc new-project $APB_NAME
+      - docker login -u developer -p $(oc whoami -t) 172.30.1.1:5000
+      - docker tag "${APB_NAME}:latest" "172.30.1.1:5000/${APB_NAME}/${APB_NAME}"
+      - docker push "172.30.1.1:5000/${APB_NAME}/${APB_NAME}"
+      - oc run "${APB_NAME}-test" -it --restart='Never' --image "172.30.1.1:5000/${APB_NAME}/${APB_NAME}" --env "OPENSHIFT_TOKEN=$(oc whoami -t)" --env "OPENSHIFT_TARGET=https://kubernetes.default.svc" --env "POD_NAME=${APB_NAME}-test" --env "POD_NAMESPACE=${APB_NAME}" -- test
+

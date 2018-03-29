@@ -17,6 +17,15 @@
 - include_role:
     name: postgresql-apb/rhscl-postgresql-apb
 
+- name: Wait for PostgreSQL DeploymentConfig
+  openshift_v1_deployment_config:
+    name: "postgresql-{{ postgresql_version }}-{{ _apb_plan_id }}"
+    namespace: '{{ namespace }}'
+  register: postgres_dc
+  retries: 30
+  delay: 20
+  until: postgres_dc['deployment_config']['status']['available_replicas'] == 1
+
 - include_role:
     name: postgresql-apb/bind-rhscl-postgresql-apb
   vars:

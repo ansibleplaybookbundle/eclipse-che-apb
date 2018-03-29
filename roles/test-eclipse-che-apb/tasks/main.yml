@@ -1,0 +1,37 @@
+---
+- name: "Generate keycloak auth token"
+  uri:
+    url: "{{ keycloak_uri }}/auth/realms/che/protocol/openid-connect/token"
+    method: POST
+    body: "client_id=admin-cli&username={{ che_keycloak_admin_username }}&password={{ che_keycloak_admin_password }}&grant_type=password"
+    validate_certs: no
+  register: keycloak_auth_response
+  until: keycloak_auth_response.status == 200
+  retries: 100
+  delay: 2
+
+- name: "Create Che Workspace"
+  uri:
+    url: "http://{{ route_host }}/api/workspace?start-after-create=true"
+    method: POST
+    body: "{{ lookup( 'template', 'body.js.j2') }}"
+    validate_certs: no
+    body_format: json
+    headers:
+      Authorization: "bearer {{ keycloak_auth_response.json.access_token }}"
+    status_code: 201
+  register: post
+
+- name: "Check Workspace Status"
+  uri:
+    url: "{{ post['json']['links']['self'] }}"
+    method: GET
+    validate_certs: no
+    body_format: json
+    headers:
+      Authorization: "bearer {{ keycloak_auth_response.json.access_token }}"
+    status_code: 200
+  register: status
+  until: status['json']['status'] == "RUNNING"
+  retries: 30
+  delay: 10

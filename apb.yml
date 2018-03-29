@@ -9,7 +9,7 @@ metadata:
   documentationUrl: "https://www.eclipse.org/che/docs/6/che/docs/"
   imageUrl: >-
     https://github.com/eclipse/che-docs/raw/master/src/main/images/che_logo.png
-  longDescription: "An APB that deploys Eclipse Che v6.x with persistent storage. Required - Persistent Volumes, ASB configured with sandbox_role admin. Unsupported - TLS, Ephemeral storage. All the parameters are defaulted with typical configured values."
+  longDescription: "An APB deploys Eclipse Che v6.x with persistent storage"
   displayName: "Eclipse Che (APB)"
   dependencies:
     - "docker.io/eclipse/che-server:nightly"
@@ -21,7 +21,7 @@ plans:
     free: true
     metadata:
       displayName: Production
-      longDescription: "This plan deploys Eclipse Che with persistent storage. All the parameters are defaulted with typical configured values."
+      longDescription: "This plan deploys Eclipse Che with persistent storage."
     parameters:
       - name: "che_image_tag"
         title: Che Server Image Tag
@@ -155,4 +155,3 @@ plans:
         required: false
         default: "INFO"
         display_group: Debug
-
