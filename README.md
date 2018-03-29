@@ -1,5 +1,6 @@
 # Eclipse Che APB
 
+[![Build Status](https://travis-ci.org/ansibleplaybookbundle/eclipse-che-apb.svg?branch=master)](https://travis-ci.org/ansibleplaybookbundle/eclipse-che-apb)
 ## Description
 
 ![alt text](https://raw.githubusercontent.com/eclipse/che-docs/master/src/main/images/che_logo.png)
