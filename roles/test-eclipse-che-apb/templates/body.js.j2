@@ -1,0 +1,37 @@
+{
+  "environments": {
+    "default": {
+      "machines": {
+        "app/main": {
+          "attributes": {
+            "memoryLimitBytes": "2147483648"
+          },
+          "servers": {
+            "web": {
+              "attributes": {},
+              "port": "8080/tcp",
+              "protocol": "http"
+            }
+          },
+          "volumes": {},
+          "installers": [
+            "org.eclipse.che.exec",
+            "org.eclipse.che.terminal",
+            "org.eclipse.che.ws-agent"
+          ],
+          "env": {}
+        }
+      },
+      "recipe": {
+        "type": "openshift",
+        "content": "kind: List\nitems:\n - \n  apiVersion: v1\n  kind: Pod\n  metadata:\n   name: app\n  spec:\n   containers:\n    - \n     image: 'rhche/centos_jdk8:latest'\n     name: main\n     ports:\n      - \n       containerPort: 8080\n       protocol: TCP\n     resources:\n      limits:\n       memory: 2048Mi\n",
+        "contentType": "application/x-yaml"
+      }
+    }
+  },
+  "defaultEnv": "default",
+  "projects": [],
+  "name": "apbtest",
+  "commands": [],
+  "links": []
+}

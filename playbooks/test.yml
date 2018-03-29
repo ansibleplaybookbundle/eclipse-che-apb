@@ -1,0 +1,39 @@
+---
+- name: "[TEST] Test Eclipse APB"
+  hosts: localhost
+  gather_facts: False
+  connection: local
+  vars:
+    _apb_plan_id: prod
+    namespace: eclipse-che-apb
+    encode: False
+    che_keycloak_admin_password: admin
+    che_keycloak_admin_username: admin
+    postgresql_version: 9.6
+    cluster: openshift
+  roles:
+  - role: ansible.kubernetes-modules
+    install_python_requirements: no
+  - role: ansibleplaybookbundle.asb-modules
+  tasks:
+
+    - set_fact:
+        token: "{{ lookup('env', 'OPENSHIFT_TOKEN' ) }}"
+        ocp_host: "{{ lookup('env', 'OPENSHIFT_TARGET' ) }}"
+
+    - name: "Login?"
+      command: "oc login --token={{ token }} --insecure-skip-tls-verify=true {{ ocp_host }}"
+
+    - name: "[TEST] Create new project"
+      openshift_v1_project:
+        name: "{{ namespace }}"
+        state: 'present'
+
+    - include_role:
+        name: provision-eclipse-che-apb
+      vars:
+        cluster: openshift
+
+    - include_role:
+        name: test-eclipse-che-apb
+

@@ -1,0 +1,38 @@
+---
+- name: Process ConfigMap Object from template
+  template:
+    src: configmap.yaml.j2
+    dest: "/tmp/configmap.yaml"
+  register: cmobj
+
+- set_fact:
+    cmobj_path: "{{ cmobj.dest | default(cmobj.path) }}"
+
+# The k8s_v1_config_map module _does_ _not_ _work_
+# If a value is an empty string it will remove the key-value.
+- name: Create ConfigMap
+  command: "oc -n {{ namespace }} create -f {{ cmobj_path }}"
+
+# https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#configure-all-key-value-pairs-in-a-configmap-as-pod-environment-variables
+- name: Process DeploymentConfig from template
+  template:
+    src: deploymentconfig.yaml.j2
+    dest: "/tmp/deploymentconfig.yaml"
+  register: dc
+
+- name: Create DeploymentConfig
+  openshift_v1_deployment_config:
+    name: "{{ application_name }}"
+    namespace: "{{ namespace}}"
+    state: present
+    src: "{{ dc.dest | default(dc.path) }}"
+
+- name: DeploymentConfig wait for available replicas
+  openshift_v1_deployment_config:
+    name: "{{ application_name }}"
+    namespace: "{{ namespace}}"
+  register: che_dc
+  retries: 30
+  delay: 20
+  until: che_dc['deployment_config']['status']['available_replicas'] == 1
+
