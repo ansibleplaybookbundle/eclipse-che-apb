@@ -32,31 +32,33 @@ spec:
             path: /api/system/state
             port: 8080
             scheme: HTTP
-          initialDelaySeconds: 120
-          timeoutSeconds: 10
+          initialDelaySeconds: 50
+          failureThreshold: 3
+          timeoutSeconds: 2
         ports:
         - containerPort: 8080
           name: http
+          protocol: TCP
         - containerPort: 8000
           name: http-debug
+        - containerPort: 8888
+          name: jgroups-ping
+          protocol: TCP
         readinessProbe:
           httpGet:
             path: /api/system/state
             port: 8080
             scheme: HTTP
-          initialDelaySeconds: 15
-          timeoutSeconds: 60
-        volumeMounts:
-        - mountPath: /data
-          name: {{ application_name }}-data-volume
+          initialDelaySeconds: 25
+          timeoutSeconds: 5
+          failureThreshold: 5
+        resources:
+          limits:
+            memory: 750Mi
+          requests:
+            memory: 256Mi
+      restartPolicy: Always
       serviceAccountName: {{ application_name }}
-      volumes:
-      - name: {{ application_name }}-data-volume
-{% if che_data_pvc_quantity is defined %}
-        persistentVolumeClaim:
-          claimName: {{ application_name }}-data-claim
-{% else %}
-        emptyDir: {}
-{% endif %}
+      terminationGracePeriodSeconds: 50
   triggers:
   - type: ConfigChange

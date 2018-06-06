@@ -51,21 +51,6 @@
 - set_fact:
     route_host: "{{ route.route.spec.host }}"
 
-- name: Create Data PersistentVolumeClaim
-  k8s_v1_persistent_volume_claim:
-    name: "{{ application_name }}-data-claim"
-    namespace: "{{ namespace}}"
-    labels:
-      app: "{{ application_name }}"
-    state: present
-    access_modes:
-      - ReadWriteOnce
-    resources_requests:
-      storage: "{{ che_data_pvc_quantity }}"
-  when:
-    - che_data_pvc_quantity is defined
-    - che_data_pvc_quantity != ""
-
 - name: Create Workspace PersistentVolumeClaim
   k8s_v1_persistent_volume_claim:
     name: "{{ application_name }}-workspace-claim"
