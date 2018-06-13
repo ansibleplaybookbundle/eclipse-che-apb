@@ -23,8 +23,9 @@ jobs:
   - stage: lint
     python: '2.7'
     script:
+      - sudo apt-get install git
       - pip install --pre ansible apb yamllint
-      - ansible-galaxy install ansible.kubernetes-modules
+      - git clone https://github.com/ansible/ansible-kubernetes-modules.git $PWD/roles/ansible.kubernetes-modules
       - git clone https://github.com/ansibleplaybookbundle/ansible-asb-modules.git $PWD/roles/ansibleplaybookbundle.asb-modules
       # Verify all playbooks have valid syntax
       - |
