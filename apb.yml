@@ -14,7 +14,7 @@ metadata:
   dependencies:
     - "docker.io/eclipse/che-server:nightly"
     - "docker.io/jboss/keycloak-openshift:3.4.3.Final"
-    - "docker.io/rhscl/postgresql-96-rhel7:latest"
+    - "docker.io/centos/postgresql-96-centos7:9.6"
 plans:
   - name: prod
     description: Persistent deployment of Eclipse Che
