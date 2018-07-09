@@ -1,7 +1,33 @@
 ---
 
-- name: Remove everything
+- name: Delete Keycloak
+  command: "oc delete all -l app=keycloak -n {{ namespace }}"
+
+- name: Delete Che
+  command: "oc delete all -l app=che -n {{ namespace }}"
+
+- name: Drop posgresql Che database
+  command: "oc rsh -n {{ namespace }} dc/postgresql-9.6-prod bash -c \"dropdb dbche\""
+
+- name: Drop posgresql Keycloak database
+  command: "oc rsh -n {{ namespace }} dc/postgresql-9.6-prod bash -c \"dropdb keycloak\""
+
+- name: Remove everything else
   command: "oc delete all --all -n {{ namespace }}"
 
+- name: Delete secrets
+  command: "oc delete secret postgres -n {{ namespace }}"
+  ignore_errors: yes
 
+- name: Delete Che configmap
+  command: "oc delete cm che -n {{ namespace }}"
+  ignore_errors: yes
+
+- name: Delete Che ServiceAccount RoleBinding
+  command: "oc delete rolebinding che-admin -n {{ namespace }}"
+  ignore_errors: yes
+
+- name: Delete Che ServiceAccount
+  command: "oc delete serviceaccount che -n {{ namespace }}"
+  ignore_errors: yes
 
