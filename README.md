@@ -15,9 +15,9 @@ Deploy Eclipse Che into your OpenShift project using an APB.
     ## minishift with OpenShift 3.10
     export MINISHIFT_ENABLE_EXPERIMENTAL=y && \
     minishift config set iso-url centos && \
-    minishift start --memory=8gb --cpus=4 --disk-size=50g && \
-                    --network-nameserver 8.8.8.8 && \
-                    --openshift-version 3.10.0-rc.0 && \
+    minishift start --memory=8gb --cpus=4 --disk-size=50g \
+                    --network-nameserver 8.8.8.8 \
+                    --openshift-version 3.10.0-rc.0 \
                     --extra-clusterup-flags "--enable=service-catalog,router,registry,web-console,persistent-volumes,rhel-imagestreams,automation-service-broker"
     ```
 
