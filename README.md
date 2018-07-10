@@ -23,8 +23,8 @@ Deploy Eclipse Che into your OpenShift project using an APB.
 
 - :warning: ASB configured with [sandbox_role](https://github.com/openshift/ansible-service-broker/blob/master/docs/config.md#openshift-configuration) admin:
     ```bash
-    oc edit cm/broker-config -n openshift-automation-service-broker
-    oc rollout latest dc/openshift-automation-service-broker -n openshift-automation-service-broker
+    oc edit cm/broker-config -n openshift-automation-service-broker --as system:admin
+    oc rollout latest dc/openshift-automation-service-broker -n openshift-automation-service-broker --as system:admin
     ```
 
 ## Unsupported
