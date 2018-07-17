@@ -57,7 +57,7 @@ Deploy Eclipse Che into your OpenShift project using an APB.
 - Uninstall (deprovisioning) Che:
     ```bash
     # Trigger serviceinstance deprovisioning
-    oc get serviceinstance -n eclipse-che-apb | grep apb | awk '{ print $1 }' | xargs oc delete serviceinstance
+    oc get serviceinstance -n eclipse-che-apb | grep apb | awk '{ print $1 }' | xargs oc delete -n eclipse-che-apb serviceinstance 
     
     # Follow the deprovisioning logs
     oc get po --all-namespaces --as system:admin | grep eclipse-che-apb-dep | grep Running | awk '{print "oc logs --as system:admin -f -n "$1" "$2}' | bash -
