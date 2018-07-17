@@ -21,11 +21,20 @@ Deploy Eclipse Che into your OpenShift project using an APB.
                     --extra-clusterup-flags "--enable=service-catalog,router,registry,web-console,persistent-volumes,rhel-imagestreams,automation-service-broker"
     ```
 
-- :warning: ASB configured with [sandbox_role](https://github.com/openshift/ansible-service-broker/blob/master/docs/config.md#openshift-configuration) admin:
-    ```bash
-    oc edit cm/broker-config -n openshift-automation-service-broker --as system:admin
-    oc rollout latest dc/openshift-automation-service-broker -n openshift-automation-service-broker --as system:admin
-    ```
+- :warning: ASB default configuration should be changed or Eclipse Che deployment will fail:
+  - openshift [sandbox_role](https://github.com/openshift/ansible-service-broker/blob/master/docs/config.md#openshift-configuration) must be set to `admin` (default is `edit`) to create the correct `RoleBindings` for `che` ServiceAccount
+  - dockerhub registry tag must be set to `canary` (default is `latest`) to get the most recent build of the APB
+  
+  ```bash
+  # Edit ASB configuration
+  oc edit cm/broker-config -n openshift-automation-service-broker --as system:admin
+  
+  # Rollout ASB to take config changes
+  oc rollout latest dc/openshift-automation-service-broker -n openshift-automation-service-broker --as system:admin
+  
+  # Trigger APBs reload from the registries (see below for more details about the APB CLI)
+  apb bootstrap
+  ```
 
 ## Unsupported
 
@@ -34,15 +43,24 @@ Deploy Eclipse Che into your OpenShift project using an APB.
 
 ## Usage
 
-- Get provisioning logs:
+- Troubleshooting Che deployment:
     ```bash
-    # Set this alias to get logs with a simple command
-    alias cheapblogs="export apb_name=eclipse-che-apb-prov && oc get po --all-namespaces --as system:admin | grep $apb_name | grep Running | awk '{print\"oc logs --as system:admin -f -n \"\$1\" \"\$2}' | bash -"```
+    # Use the following command to retrieve the provisioning logs
+    oc get po --all-namespaces --as system:admin | grep eclipse-che-apb-prov | grep Running | awk '{print "oc logs --as system:admin -f -n "$1" "$2}' | bash -
+    
+    # It may be useful to look at ASB logs
+    oc logs -f dc/openshift-automation-service-broker -n openshift-automation-service-broker --as system:admin
+    
+    # Or look at the provisioning pods
+    oc get po --all-namespaces --as system:admin | grep eclipse-che-apb-prov
     ```
-- Uninstall (deprovisioning) the service:
+- Uninstall (deprovisioning) Che:
     ```bash
+    # Trigger serviceinstance deprovisioning
     oc get serviceinstance -n eclipse-che-apb | grep apb | awk '{ print $1 }' | xargs oc delete serviceinstance
-    export apb_name=eclipse-che-apb-dep && oc get po --all-namespaces --as system:admin | grep $apb_name | grep Running | awk '{print\"oc logs --as system:admin -f -n \"\$1\" \"\$2}' | bash -
+    
+    # Follow the deprovisioning logs
+    oc get po --all-namespaces --as system:admin | grep eclipse-che-apb-dep | grep Running | awk '{print "oc logs --as system:admin -f -n "$1" "$2}' | bash -
     ```
 
 ## Development
@@ -51,21 +69,30 @@ Deploy Eclipse Che into your OpenShift project using an APB.
 
 - Install `apb`
     ```bash
-    # minishift
+    # Download and install the APB CLI bash script 
     APB_URL=https://raw.githubusercontent.com/ansibleplaybookbundle/ansible-playbook-bundle/master/scripts/apb-docker-run.sh
     curl -sSL "${APB_URL}" > /usr/local/bin/abp && chmod +x /usr/local/bin/abp
+    
+    # The OpenShift user that will run the APB CLI should have enough privileges
     OS_USER=developer
     oc adm policy add-cluster-role-to-user cluster-admin "${OS_USER}"
+    
+    # On minishift, for apb CLI to work properly:
+    eval $(minishift docker-env)
     ```
 - Build and push the APB to the local registry
 
-    :warning: When running `apb` with minishift, a Docker deamon should run on the host as well as the one in the minishift VM. For example on OSX, Docker for Mac and minishift should be both running when executing `apb` commands.
+    :warning: When using minishift a Docker deamon should run on the host as well as the one in the minishift VM. For example on OSX, Docker for Mac and minishift should be both running when executing `apb` commands.
 
     ```bash
+    git clone git@github.com:ansibleplaybookbundle/eclipse-che-apb.git
+    cd eclipse-che-apb
     apb list # optional
     apb build
     apb push
     ```
+    
+    To filter out APBs except local ones [change the ASB config](https://github.com/openshift/ansible-service-broker/blob/master/docs/config.md#local-openshift-registry).
 
 ### CLI Testing
 
