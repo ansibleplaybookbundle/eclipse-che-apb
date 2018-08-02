@@ -71,7 +71,7 @@ Deploy Eclipse Che into your OpenShift project using an APB.
     ```bash
     # Download and install the APB CLI bash script 
     APB_URL=https://raw.githubusercontent.com/ansibleplaybookbundle/ansible-playbook-bundle/master/scripts/apb-docker-run.sh
-    curl -sSL "${APB_URL}" > /usr/local/bin/abp && chmod +x /usr/local/bin/abp
+    curl -sSL "${APB_URL}" > /usr/local/bin/apb && chmod +x /usr/local/bin/apb
     
     # The OpenShift user that will run the APB CLI should have enough privileges
     OS_USER=developer
