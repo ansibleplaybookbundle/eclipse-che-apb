@@ -6,7 +6,7 @@ bindable: false
 async: optional
 metadata:
   providerDisplayName: "Red Hat, Inc."
-  documentationUrl: "https://www.eclipse.org/che/docs/6/che/docs/"
+  documentationUrl: "https://www.eclipse.org/che/docs/"
   imageUrl: >-
     https://github.com/eclipse/che-docs/raw/master/src/main/images/che_logo.png
   longDescription: "An APB deploys Eclipse Che v6.x with persistent storage"
