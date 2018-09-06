@@ -1,7 +1,22 @@
 ---
+- name: Create cert secret
+  k8s_v1_secret:
+    name: 'self-signed-cert'
+    namespace: '{{ namespace }}'
+    labels:
+      app: '{{ application_name }}'
+    string_data:
+      ca.crt: "{{ che_self_signed_cert }}"
+  when:
+    - che_self_signed_cert is defined
+    - che_self_signed_cert != ""
+
 - include_tasks: postgres.yml
+  when: not che_external_db
 - include_tasks: keycloak.yml
+  when: not external_keycloak
+
 - include_tasks: che.yml
 - include_tasks: realm.yml
+  when: keycloak_provision_realm_user
 - include_tasks: chedc.yml
-

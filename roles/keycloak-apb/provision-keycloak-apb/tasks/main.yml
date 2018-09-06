@@ -4,10 +4,6 @@
     path: /tmp/keycloak
     state: directory
 
-- name: "[POSTGRES] Deploy"
-  include_tasks: deploy-postgres.yml
-  when: _apb_plan_id == 'persistent'
-
 - name: "[KEYCLOAK] Deploy"
   include_tasks: deploy-keycloak.yml
   when: _apb_plan_id != 'external'
@@ -26,3 +22,4 @@
 
 - name: "[KEYCLOAK] Provision"
   include_tasks: provision-keycloak.yml
+  when: keycloak_provision_realm_user

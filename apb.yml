@@ -9,7 +9,7 @@ metadata:
   documentationUrl: "https://www.eclipse.org/che/docs/"
   imageUrl: >-
     https://github.com/eclipse/che-docs/raw/master/src/main/images/che_logo.png
-  longDescription: "An APB deploys Eclipse Che v6.x with persistent storage"
+  longDescription: "An APB deploys Eclipse Che v6.x with persistent storage."
   displayName: "Eclipse Che (APB)"
   dependencies:
     - "docker.io/eclipse/che-server:nightly"
@@ -25,12 +25,28 @@ plans:
     parameters:
       - name: "che_image_tag"
         title: Che Server Image Tag
+        description: Latest always points to the latest stable tag, nightly is the most recent nightly build
         type: enum
-        enum: ["nightly-centos", "nightly", "latest-centos", "latest"]
+        enum: ["nightly", "latest"]
         required: false
         default: "nightly"
         display_group: Che Configuration
-      - name: "che_server_deployment_stragety"
+      - name: "che_secure_routes"
+        title: HTTPS Support
+        description: Use HTTPS protocol for all endpoints. Provide celf signed cert if applicable
+        type: boolean
+        default: false
+        required: false
+        display_group: Che Configuration
+      - name: "che_self_signed_cert"
+        title: Self Signed OpenShift Router Certificate
+        description: Content of OpenShift router root CA. Should start with -----BEGIN CERTIFICATE-----. Only if you have self signed CA
+        type: string
+        display_type: textarea
+        default: ""
+        required: false
+        display_group: Che Configuration
+      - name: "che_server_deployment_strategy"
         title: Che Deployment Stragety
         type: enum
         enum: ["Recreate", "Rolling"]
@@ -53,9 +69,30 @@ plans:
       - name: "che_workspace_auto_start"
         title: "Workspace auto start"
         type: boolean
-        default: false
+        default: true
         required: false
         display_group: Che Configuration
+      - name: "external_keycloak"
+        title: "Connect to External Keycloak"
+        description: When selected, provide Keycloak URI in the field below. Leave unchecked to create a new Keycloak deployment
+        type: boolean
+        default: false
+        required: false
+        display_group: Keycloak Configuration
+      - name: "keycloak_uri"
+        title: External Keycloak URI
+        description: Leave blank start a new Keycloak or provide URL of an existing Keycloak instance, e.g. https://your-rh-keycloak-url
+        type: string
+        required: false
+        default: ""
+        display_group: Keycloak Configuration
+      - name: "keycloak_provision_realm_user"
+        title: "Provision realm and admin user"
+        description: Unselect only when using existing realm and client of an external Keycloak
+        type: boolean
+        default: true
+        required: false
+        display_group: Keycloak Configuration
       - name: "che_keycloak_admin_username"
         title: Keycloak Admin Username
         type: string
@@ -81,6 +118,13 @@ plans:
         default: "che-public"
         required: false
         display_group: Keycloak Configuration
+      - name: "che_external_db"
+        title: "Connect to External Postgres Database"
+        description: Check to connect to existing external database. Provide external host, port, user, password and database in the fields below.
+        type: boolean
+        default: false
+        required: false
+        display_group: PostgreSQL Database Configuration
       - name: "che_jdbc_db_host"
         title: Database host
         type: string
@@ -99,13 +143,13 @@ plans:
         required: false
         default: "dbche"
         display_group: PostgreSQL Database Configuration
-      - name: "che_jdbc_db_username"
+      - name: "che_jdbc_username"
         title: Database username
         type: string
         required: false
         default: "pgche"
         display_group: PostgreSQL Database Configuration
-      - name: "che_jdbc_db_password"
+      - name: "che_jdbc_password"
         title: Database password (set to default pgchepassword)
         type: string
         required: false

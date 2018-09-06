@@ -17,7 +17,7 @@ che_workspace_auto_start: "true"
 che_workspace_memory_limit: "2400mb"
 che_workspace_memory_request: "2400"
 
-che_server_deployment_stragety: "Recreate"
+che_server_deployment_strategy: "Recreate"
 che_server_image_pull_policy: "IfNotPresent"
 
 # PostgreSQL Che Configuration
@@ -31,8 +31,7 @@ che_jdbc_url: "jdbc:postgresql://{{ che_jdbc_db_host }}:{{ che_jdbc_db_port }}/{
 # Keycloak Che Configuration
 che_keycloak_client__id: "che-public"
 che_keycloak_realm: "che"
-che_keycloak_github_endpoint: "NULL"
-che_keycloak_oso_endpoint: "NULL"
+
 
 # Kubernetes PVC
 che_infra_kubernetes_pvc_precreate__subpaths: "false"
@@ -43,14 +42,7 @@ che_infra_kubernetes_pvc_name: ""
 # Kubernetes / OpenShift Config
 che_infra_kubernetes_machine__start__timeout__min: "5"
 che_infra_kubernetes_master__url: ""
-che_infra_kubernetes_oauth__token: ""
-che_infra_kubernetes_password: ""
 che_infra_kubernetes_trust__certs: "false"
-che_infra_kubernetes_username: ""
 che_infra_openshift_tls__enabled: "false"
 
 che_infra_openshift_project: "{{ namespace }}"
-
-# Github
-che_oauth_github_clientid: ""
-che_oauth_github_clientsecret: ""

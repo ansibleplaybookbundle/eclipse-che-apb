@@ -4,6 +4,4 @@ playbook_debug: no
 # Non global constants
 keycloak_image_name: docker.io/jboss/keycloak-openshift
 keycloak_image_tag: 3.4.3.Final
-postgres_image: centos/postgresql-95-centos7
-postgres_image_tag: '9.5'
 database_name: '{{ namespace }}'

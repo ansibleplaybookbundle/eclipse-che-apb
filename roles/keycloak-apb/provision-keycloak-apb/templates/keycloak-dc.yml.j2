@@ -11,6 +11,12 @@ spec:
   selector:
     app: {{ application_name }}
     service: {{ application_name }}
+  strategy:
+    activeDeadlineSeconds: 21600
+    recreateParams:
+      timeoutSeconds: 600
+    resources: {}
+    type: Recreate
   template:
     metadata:
       labels:
@@ -18,60 +24,89 @@ spec:
         service: {{ application_name }}
     spec:
       containers:
-      - image: ' '
-        imagePullPolicy: IfNotPresent
-        name: keycloak
-        readinessProbe:
-          initialDelaySeconds: 40
-          failureThreshold: 10
-          httpGet:
-            path: /
-            port: web
-        livenessProbe:
-          initialDelaySeconds: 200
-          httpGet:
-            path: /
-            port: web
-        env:
-        - name: KEYCLOAK_USER
-          value: {{ admin_username }}
-        - name: KEYCLOAK_PASSWORD
-          value: {{ admin_password }}
-        - name: PROXY_ADDRESS_FORWARDING
-          value: 'true'
-{% if _apb_plan_id == 'ephemeral' %}
-        - name: DB_VENDOR
-          value: H2
-{% elif _apb_plan_id == 'persistent' %}
-        - name: POSTGRES_USER
-          value_from:
-            secret_key_ref:
-              name: {{ postgres_name }}
-              key: database-user
-        - name: POSTGRES_PASSWORD
-          value_from:
-            secret_key_ref:
-              name: {{ postgres_name }}
-              key: database-password
-        - name: POSTGRES_DATABASE
-          value_from:
-            secret_key_ref:
-              name: {{ postgres_name }}
-              key: database-name
+        - args:
+            - '-c'
+            - >-
+{% if che_self_signed_cert is defined %}
+              echo "Found a custom cert. Adding it to Keycloak trust store..." &&
+              echo "${OPENSHIFT_IDENTITY_PROVIDER_CERTIFICATE}" > /opt/jboss/keycloak/standalone/openshift.crt &&
+              keytool -importcert -alias HOSTDOMAIN -keystore /opt/jboss/keycloak/standalone/openshift.jks -file /opt/jboss/keycloak/standalone/openshift.crt -storepass openshift -noprompt &&
+              keytool -importkeystore -srckeystore $JAVA_HOME/jre/lib/security/cacerts -destkeystore /opt/jboss/keycloak/standalone/openshift.jks -srcstorepass changeit -deststorepass openshift &&
+              echo -e "embed-server --server-config=standalone.xml --std-out=echo\n/subsystem=keycloak-server/spi=truststore/:add\n/subsystem=keycloak-server/spi=truststore/provider=file/:add(properties={file => \"/opt/jboss/keycloak/standalone/openshift.jks\", password => \"openshift\", disabled => \"false\" },enabled=true)\nstop-embedded-server" > /opt/jboss/keycloak/standalone/add_certificate.cli && /opt/jboss/keycloak/bin/jboss-cli.sh --file=/opt/jboss/keycloak/standalone/add_certificate.cli && rm -rf /opt/jboss/keycloak/standalone/configuration/standalone_xml_history &&
 {% endif %}
-        ports:
-        - containerPort: 8080
-          protocol: TCP
-          name: web
-        resources: {}
+              /opt/jboss/docker-entrypoint.sh -Djboss.bind.address=0.0.0.0
+          command:
+            - /bin/sh
+          env:
+            - name: KEYCLOAK_USER
+              value: {{ admin_username }}
+            - name: KEYCLOAK_PASSWORD
+              value: {{ admin_password }}
+            - name: PROXY_ADDRESS_FORWARDING
+              value: 'true'
+            - name: POSTGRES_USER
+              value_from:
+                secret_key_ref:
+                  name: {{ postgres_name }}
+                  key: database-user
+            - name: POSTGRES_PASSWORD
+              value_from:
+                secret_key_ref:
+                  name: {{ postgres_name }}
+                  key: database-password
+            - name: POSTGRES_DATABASE
+              value_from:
+                secret_key_ref:
+                  name: {{ postgres_name }}
+                  key: database-name
+            - name: PROXY_ADDRESS_FORWARDING
+              value: 'true'
+            - name: OPENSHIFT_IDENTITY_PROVIDER_CERTIFICATE
+              valueFrom:
+                secretKeyRef:
+                  key: ca.crt
+                  name: self-signed-cert
+                  optional: true
+          image: '{{ keycloak_image_name }}:{{ keycloak_image_tag }}'
+          imagePullPolicy: Always
+          readinessProbe:
+            initialDelaySeconds: 40
+            failureThreshold: 10
+            httpGet:
+              path: /
+              port: web
+          livenessProbe:
+            initialDelaySeconds: 200
+            httpGet:
+              path: /
+              port: web
+          name: {{ application_name }}
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+              name: web
+          readinessProbe:
+            failureThreshold: 10
+            httpGet:
+              path: auth/js/keycloak.js
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 60
+            periodSeconds: 3
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            limits:
+              memory: 1536Mi
+            requests:
+              memory: 1Gi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+  test: false
   triggers:
-  - type: ConfigChange
-  - imageChangeParams:
-      automatic: true
-      containerNames:
-      - keycloak
-      from:
-        kind: ImageStreamTag
-        name: {{ application_name }}:{{ keycloak_image_tag }}
-        namespace: {{ namespace }}
-    type: ImageChange
+    - type: ConfigChange

@@ -1,8 +1,8 @@
 ---
 - name: Eclipse Che Route
   set_fact:
-    web_origins: "http://{{ route_host }}"
-    redirect_uris: "http://{{ route_host }}/*"
+    web_origins: "{{ protocol  | default('http') }}://{{ route_host }}"
+    redirect_uris: "{{ protocol  | default('http') }}://{{ route_host }}/*"
 
 - name: "Generate keycloak auth token"
   uri:
@@ -15,7 +15,7 @@
   retries: 100
   delay: 2
 
-- name: "Create client in realm {{ namespace }}"
+- name: "Create realm {{ che_keycloak_realm }} and client {{ che_keycloak_client__id }}"
   uri:
     url: "{{ keycloak_uri }}/auth/admin/realms/"
     method: POST
@@ -27,9 +27,9 @@
     status_code: 201
 
 
-- name: "Create client in realm {{ namespace }}"
+- name: "Create users in realm {{ che_keycloak_realm }}"
   uri:
-    url: "{{ keycloak_uri }}/auth/admin/realms/che/users"
+    url: "{{ keycloak_uri }}/auth/admin/realms/{{ che_keycloak_realm }}/users"
     method: POST
     body: "{{ lookup('template', 'che-users-0.json.j2') }}"
     validate_certs: no

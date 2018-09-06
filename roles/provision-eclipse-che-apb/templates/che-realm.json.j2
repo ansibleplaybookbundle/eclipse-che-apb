@@ -1,6 +1,6 @@
 {
-  "id" : "che",
-  "realm" : "che",
+  "id" : "{{ che_keycloak_realm }}",
+  "realm" : "{{ che_keycloak_realm }}",
   "notBefore" : 0,
   "revokeRefreshToken" : false,
   "accessTokenLifespan" : 300,
@@ -39,7 +39,7 @@
       "containerId" : "che"
     } ],
     "client" : {
-      "che-public" : [ ]
+      "{{ che_keycloak_client__id }}" : [ ]
     }
   },
   "groups" : [ ],
@@ -53,7 +53,7 @@
   "otpPolicyPeriod" : 30,
   "clients" : [ {
     "id" : "40162c8f-5c44-4b61-91cf-a6eac6b9e61a",
-    "clientId" : "che-public",
+    "clientId" : "{{ che_keycloak_client__id }}",
     "surrogateAuthRequired" : false,
     "enabled" : true,
     "clientAuthenticatorType" : "client-secret",

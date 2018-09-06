@@ -6,18 +6,25 @@
 - name: Delete Che
   command: "oc delete all -l app=che -n {{ namespace }}"
 
-- name: Drop posgresql Che database
-  command: "oc rsh -n {{ namespace }} dc/postgresql-9.6-prod bash -c \"dropdb dbche\""
-
-- name: Drop posgresql Keycloak database
-  command: "oc rsh -n {{ namespace }} dc/postgresql-9.6-prod bash -c \"dropdb keycloak\""
-
 - name: Remove everything else
   command: "oc delete all --all -n {{ namespace }}"
 
-- name: Delete secrets
+- name: Delete pvc
+  command: "oc delete pvc postgresql-9.6-prod -n {{ namespace }}"
+  ignore_errors: yes
+
+- name: Delete postgres secrets
   command: "oc delete secret postgres -n {{ namespace }}"
   ignore_errors: yes
+
+- name: Delete db password secret
+  command: "oc delete secret database-passwords -n {{ namespace }}"
+  ignore_errors: yes
+
+- name: Delete Self Signed Cert Secret
+  command: "oc delete secret self-signed-cert -n {{ namespace }}"
+  ignore_errors: yes
+  when: che_self_signed_cert !=""
 
 - name: Delete Che configmap
   command: "oc delete cm che -n {{ namespace }}"
@@ -30,4 +37,3 @@
 - name: Delete Che ServiceAccount
   command: "oc delete serviceaccount che -n {{ namespace }}"
   ignore_errors: yes
-

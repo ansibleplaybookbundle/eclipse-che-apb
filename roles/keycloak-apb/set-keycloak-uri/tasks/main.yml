@@ -8,7 +8,43 @@
   delay: 20
   until: keycloak_dc_raw.deployment_config.status.available_replicas == 1
 
-- name: Get keycloak https route
+
+- name: Create keycloak http route
+  openshift_v1_route:
+    name: "{{ application_name }}"
+    namespace: "{{ namespace }}"
+    labels:
+      app: "{{ application_name }}"
+      service: "{{ application_name }}"
+    to_name: "{{ application_name }}"
+    to_kind: 'Service'
+    spec_port_target_port: 'web'
+  register: keycloak_route_raw
+  when: not che_secure_routes
+
+- name: Create keycloak https route
+  openshift_v1_route:
+    name: '{{ application_name }}'
+    namespace: '{{ namespace }}'
+    labels:
+      app: '{{ application_name }}'
+      service: '{{ application_name }}'
+    tls_termination: edge
+    tls_insecure_edge_termination_policy: Allow
+    to_name: '{{ application_name }}'
+    spec_port_target_port: web
+  register: keycloak_route_raw
+  when: che_secure_routes
+
+- name: Set TLS related envs
+  set_fact:
+    protocol: "https"
+    ws_protocol: "wss"
+    che_infra_kubernetes_trust__certs: "true"
+    che_infra_openshift_tls__enabled: "true"
+  when: che_secure_routes
+
+- name: Get keycloak route
   openshift_v1_route:
     name: '{{ application_name }}'
     namespace: '{{ namespace }}'
@@ -16,7 +52,7 @@
 
 - name: Set keycloak uri from route
   set_fact:
-    keycloak_uri: 'https://{{ keycloak_route_raw.route.spec.host }}'
+    keycloak_uri: "{{ protocol  | default('http') }}://{{ keycloak_route_raw.route.spec.host }}"
 
 - name: Test URL
   uri:
@@ -30,35 +66,3 @@
   until:
     - webpage.status == 200
     - '"Welcome to" in webpage.content'
-
-- block:
-  - name: Get keycloak service
-    k8s_v1_service:
-      name: '{{ application_name }}'
-      namespace: '{{ namespace }}'
-    register: keycloak_service_raw
-
-  - name: Set keycloak uri from service
-    set_fact:
-      keycloak_uri: 'http://{{ keycloak_service_raw.service.spec.cluster_ip }}:{{ keycloak_service_raw.service.spec.ports[0].port }}'
-
-  - name: Test URL
-    uri:
-      url: "{{ keycloak_uri }}/auth/"
-      return_content: yes
-      validate_certs: no
-    register: webpage_svc
-    ignore_errors: true
-    retries: 5
-    delay: 5
-    until:
-      - webpage_svc.status == 200
-      - '"Welcome to" in webpage_svc.content'
-
-  - name: Check if keycloak_uri has been set and verified
-    fail:
-      msg: Unable to retrieve a valid keycloak_uri
-    when: (webpage_svc.status != 200) or
-          (not "Welcome to" in webpage_svc.content)
-  when: (webpage.status != 200) or
-        (not "Welcome to" in webpage.content)

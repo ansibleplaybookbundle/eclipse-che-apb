@@ -10,7 +10,7 @@
     _apb_provision_creds:
       DB_PORT: "5432"
       DB_TYPE: postgres
-      DB_HOST: postgresql
+      DB_HOST: postgres
       DB_ADMIN_USER: postgres
       DB_ADMIN_PASSWORD: "{{ postgresql_admin_password }}"
 
@@ -25,6 +25,27 @@
   retries: 30
   delay: 20
   until: postgres_dc['deployment_config']['status']['available_replicas'] == 1
+
+- name: Create Postgres service
+  k8s_v1_service:
+    name: 'postgres'
+    namespace: '{{ namespace }}'
+    labels:
+      app: rhscl-postgresql-apb
+    annotations:
+      template.openshift.io/expose-uri: postgres://{.spec.clusterIP}:{.spec.ports[?(.name=="postgresql")].port}
+    ports:
+      - name: postgresql
+        protocol: TCP
+        port: 5432
+        target_port: 5432
+        node_port: 0
+    selector:
+      app: rhscl-postgresql-apb
+      service: postgresql-9.6-prod
+    spec_type: ClusterIP
+    session_affinity: None
+
 
 - include_role:
     name: postgresql-apb/bind-rhscl-postgresql-apb
@@ -67,23 +88,3 @@
       database-user: "keycloak"
       database-password: "{{ postgresql_keycloak_password }}"
       database-name: "keycloak"
-
-- name: Create Postgres service
-  k8s_v1_service:
-    name: 'postgres'
-    namespace: '{{ namespace }}'
-    labels:
-      app: rhscl-postgresql-apb
-    annotations:
-      template.openshift.io/expose-uri: postgres://{.spec.clusterIP}:{.spec.ports[?(.name=="postgresql")].port}
-    ports:
-      - name: postgresql
-        protocol: TCP
-        port: 5432
-        target_port: 5432
-        node_port: 0
-    selector:
-      app: rhscl-postgresql-apb
-      service: postgresql-9.6-prod
-    spec_type: ClusterIP
-    session_affinity: None

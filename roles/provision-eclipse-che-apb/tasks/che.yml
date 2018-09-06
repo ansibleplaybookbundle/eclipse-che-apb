@@ -36,7 +36,22 @@
     labels:
       app: "{{ application_name }}"
 
-- name: Create Route
+- name: Create HTTPS Route
+  openshift_v1_route:
+    name: "{{ application_name }}"
+    namespace: "{{ namespace }}"
+    labels:
+      app: "{{ application_name }}"
+    tls_termination: edge
+    tls_insecure_edge_termination_policy: Allow
+    state: present
+    spec_to_kind: Service
+    spec_to_name: "che-host"
+    spec_port_target_port: http
+  register: route
+  when: che_secure_routes
+
+- name: Create HTTP Route
   openshift_v1_route:
     name: "{{ application_name }}"
     namespace: "{{ namespace }}"
@@ -47,9 +62,16 @@
     spec_to_name: "che-host"
     spec_port_target_port: http
   register: route
+  when: not che_secure_routes
+
+- name: Get server route
+  openshift_v1_route:
+    name: '{{ application_name }}'
+    namespace: '{{ namespace }}'
+  register: server_route_raw
 
 - set_fact:
-    route_host: "{{ route.route.spec.host }}"
+    route_host: "{{ server_route_raw.route.spec.host }}"
 
 - name: Create Workspace PersistentVolumeClaim
   k8s_v1_persistent_volume_claim:

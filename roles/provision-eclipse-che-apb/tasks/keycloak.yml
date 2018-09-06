@@ -19,25 +19,6 @@
     application_name: keycloak
     admin_username:  "{{ che_keycloak_admin_username }}"
     admin_password: "{{ che_keycloak_admin_password }}"
-
-- name: delete keycloak https route
-  openshift_v1_route:
-    name: 'keycloak'
-    namespace: '{{ namespace }}'
-    state: 'absent'
-
-- name: Create keycloak http route
-  openshift_v1_route:
-    name: 'keycloak'
-    namespace: '{{ namespace }}'
-    labels:
-      app: 'keycloak'
-      service: 'keycloak'
-    to_name: 'keycloak'
-    to_kind: 'Service'
-    spec_port_target_port: 'web'
-  register: keycloak_route_raw
-
-- name: Set keycloak uri from route
-  set_fact:
-    keycloak_uri: 'http://{{ keycloak_route_raw.route.spec.host }}'
+    when:
+      - keycloak_uri is not defined
+      - keycloak_uri = ""

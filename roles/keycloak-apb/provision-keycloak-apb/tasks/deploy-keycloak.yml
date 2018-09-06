@@ -1,17 +1,4 @@
 ---
-- name: Process ImageStream from template
-  template:
-    src: keycloak-is.yml.j2
-    dest: "/tmp/keycloak/keycloak-is.yml"
-  register: is
-
-- name: Create ImageStream
-  openshift_v1_image_stream:
-    name: "{{ application_name }}"
-    namespace: "{{ namespace }}"
-    state: present
-    src: "{{ is.dest | default(is.path) }}"
-
 - name: Create keycloak service
   k8s_v1_service:
     name: '{{ application_name }}'
@@ -26,33 +13,6 @@
     - name: web
       port: 80
       target_port: 8080
-
-- name: Create keycloak https route
-  openshift_v1_route:
-    name: '{{ application_name }}'
-    namespace: '{{ namespace }}'
-    labels:
-      app: '{{ application_name }}'
-      service: '{{ application_name }}'
-    tls_termination: edge
-    tls_insecure_edge_termination_policy: Redirect
-    to_name: '{{ application_name }}'
-    spec_port_target_port: web
-  when: apb_keycloak_uri is not defined
-
-- name: Create keycloak https route
-  openshift_v1_route:
-    name: '{{ application_name }}'
-    namespace: '{{ namespace }}'
-    labels:
-      app: '{{ application_name }}'
-      service: '{{ application_name }}'
-    tls_termination: edge
-    tls_insecure_edge_termination_policy: Redirect
-    to_name: '{{ application_name }}'
-    spec_port_target_port: web
-    spec_host: '{{ apb_keycloak_uri | regex_replace("http(s)?://", "")}}'
-  when: apb_keycloak_uri is defined
 
 - name: Process DeploymentConfig from template
   template:

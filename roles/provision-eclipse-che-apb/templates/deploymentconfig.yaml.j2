@@ -10,8 +10,8 @@ spec:
   selector:
     app: {{ application_name }}
   strategy:
-    type: {{ che_server_deployment_stragety }}
-{% if che_server_deployment_stragety == 'Recreate' %}
+    type: {{ che_server_deployment_strategy }}
+{% if che_server_deployment_strategy == 'Recreate' %}
     recreateParams:
       timeoutSeconds: 10000
 {% endif %}
@@ -22,6 +22,13 @@ spec:
     spec:
       containers:
       - name: {{ application_name }}
+        env:
+        - name: OPENSHIFT_IDENTITY_PROVIDER_CERTIFICATE
+          valueFrom:
+            secretKeyRef:
+              key: ca.crt
+              name: self-signed-cert
+              optional: true
         envFrom:
         - configMapRef:
             name: che
